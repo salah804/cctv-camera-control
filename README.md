@@ -158,11 +158,51 @@ A complete database migration is not currently included.
 - Camera configuration is stored locally; additional
   protection may be needed for sensitive deployments.
 
-## Screenshots
+## 📱 Application Screenshots
 
-Screenshots of the application interface will be added
-to demonstrate the dashboard, camera monitoring,
-profile management, and playback features.
+Explore the CCTV Camera Control application through real screenshots captured from the Flutter Android app.
+
+### Application Showcase
+
+<p align="center">
+  <img src="assets/showcase.png" width="850" alt="CCTV Camera Control Application Showcase">
+</p>
+
+### Camera Dashboard & User Profile
+
+<table>
+  <tr>
+    <td align="center"><b>Camera Dashboard</b></td>
+    <td align="center"><b>User Profile</b></td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="assets/dashboard.png" width="300" alt="Camera Dashboard">
+    </td>
+    <td align="center">
+      <img src="assets/profile.png" width="300" alt="User Profile">
+    </td>
+  </tr>
+</table>
+
+### Account Security & Password Recovery
+
+<table>
+  <tr>
+    <td align="center"><b>Account Security</b></td>
+    <td align="center"><b>Password Recovery</b></td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="assets/account-security.png" width="300" alt="Account Security">
+    </td>
+    <td align="center">
+      <img src="assets/password-recovery.png" width="300" alt="Password Recovery">
+    </td>
+  </tr>
+</table>
+
+> **Note:** Screenshots are captured from the application, with sensitive account information and camera network addresses concealed. Live streaming and playback require compatible cameras and network connectivity.
 
 ## Developer
 
