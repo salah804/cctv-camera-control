@@ -1,28 +1,178 @@
 
-# CCTV Camera Control — PHP Backend
+<div align="center">
 
-PHP/MySQL API used by the Flutter CCTV Camera Control app. Production endpoint: `https://salahayash.helioho.st/cctv-api/`.
+<img src="assets/app_icon.png" width="130" alt="CCTV Camera Control Logo">
 
-## Backend source included
+# CCTV Camera Control
 
-The following files were recovered from user-supplied code or previously reviewed endpoint versions: `register.php`, `google_login.php`, `logout.php`, `getUserDetails.php`, `update_profile.php`, `profile_auth.php`, `reset_password.php`. They were not re-tested against production in this exported copy.
+### Smart CCTV Monitoring & Surveillance Management
 
-**Complete the repository using your known-working copies** of `login.php`, `check_session.php`, `change_password.php`, and `request_password_reset.php` from HelioHost Plesk before describing the repo as a complete backend. The source for those exact deployed versions was not available in this conversation. Do not generate replacements or overwrite the live files just to make the GitHub repo complete.
+A Flutter-based CCTV application featuring live camera
+streaming, recorded video playback, secure authentication,
+and a modern dark-themed interface.
 
-The actual `db_connection.php` is deliberately excluded from Git and must remain available when deployed. `db_connection.example.php` documents one safe pattern; it does NOT necessarily match the format of your existing private configuration file, and must NOT replace your working file.
+**Flutter • Dart • PHP • MySQL • RTSP • VLC**
 
-## Production structure
+</div>
 
-- `httpdocs/cctv-api/` — copy the PHP API files here
-- `private/cctv_config.php` — private MySQL credentials (outside document root)
-- `private/cctv_mail_config.php` — private SMTP password (outside document root)
-- `httpdocs/cctv-api/vendor/` — Composer dependencies (excluded from Git)
+---
 
-Run `composer install --no-dev --optimize-autoloader` on a compatible machine / server as appropriate. Preserve the working `.htaccess` Authorization header forwarding rule.
+## About the Project
 
-## Safety
+CCTV Camera Control is a mobile application designed
+to simplify IP camera monitoring and management.
 
-- The app has authenticated profiles; all profile operations must use an active `Bearer` token and derive user identity from the session in MySQL.
-- Never commit `.env`, camera RTSP credentials, Google client secrets, Gmail app passwords, MySQL dumps with user data, or production private PHP config.
-- The public Google OAuth **client ID** embedded in `google_login.php` is not an OAuth client secret.
-- Keep the website's separate IQRA project files untouched.
+The application combines Flutter with a PHP/MySQL
+backend to provide secure account management,
+live video streaming, and recorded video playback.
+
+## Features
+
+### Authentication & Account Management
+- Secure login and registration
+- Google Sign-In
+- Stay signed in using session authentication
+- Forgot password and password reset
+- Change password
+- Logout and session management
+
+### User Profile
+- View and update profile information
+- Upload and remove profile pictures
+- Optimized image uploads
+- Fast profile reopening with memory caching
+
+### CCTV Monitoring
+- Add and manage IP cameras
+- RTSP live streaming using VLC
+- Camera selection and management
+- Date-based recording playback
+- Playback controls
+- Offline demonstration cameras and videos
+
+### User Interface
+- Modern dark and futuristic design
+- Cyan accent colors
+- Custom application launcher icon
+- Mobile-friendly Flutter interface
+
+## Technology Stack
+
+| Category | Technologies |
+|---|---|
+| Mobile | Flutter, Dart |
+| Backend | PHP, REST APIs |
+| Database | MySQL / MariaDB |
+| Authentication | Google Sign-In, Session Tokens |
+| Video Streaming | RTSP, VLC |
+| Video Playback | flutter_vlc_player, video_player |
+| Local Storage | SharedPreferences |
+| Secure Storage | FlutterSecureStorage |
+| Hosting | HelioHost |
+| Version Control | Git, GitHub |
+
+## Project Structure
+
+```text
+camera/
+├── android/
+├── ios/
+├── lib/
+│   ├── main.dart
+│   ├── login.dart
+│   ├── register.dart
+│   ├── home.dart
+│   ├── profile.dart
+│   ├── RecordingScreen.dart
+│   ├── playback_screen.dart
+│   └── demo_screen.dart
+├── backend/
+│   ├── login.php
+│   ├── register.php
+│   ├── google_login.php
+│   ├── check_session.php
+│   ├── logout.php
+│   ├── change_password.php
+│   ├── request_password_reset.php
+│   ├── reset_password.php
+│   ├── getUserDetails.php
+│   ├── update_profile.php
+│   └── profile_auth.php
+├── assets/
+│   ├── app_icon.png
+│   └── videos/
+└── pubspec.yaml
+```
+
+## Getting Started
+
+### Requirements
+
+- Flutter SDK
+- Android Studio or VS Code
+- Android emulator or physical Android device
+- PHP/MySQL backend for account features
+- Compatible IP camera for real RTSP playback
+
+### Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/salah804/cctv-camera-control.git
+cd cctv-camera-control
+```
+
+Install dependencies:
+
+```bash
+flutter pub get
+```
+
+Run the application:
+
+```bash
+flutter run
+```
+
+### Backend Configuration
+
+The PHP source is located in the `backend/` folder.
+
+Configure your own PHP hosting, MySQL database,
+email service, and authentication settings.
+
+The repository intentionally excludes production
+database passwords, private configuration files,
+and other credentials.
+
+The provided configuration examples are templates.
+A complete database migration is not currently included.
+
+## Security Notes
+
+- Passwords are stored using secure password hashing.
+- Authenticated profile requests use Bearer tokens.
+- Sensitive production configuration is excluded.
+- Do not publish private RTSP camera credentials.
+- Camera configuration is stored locally; additional
+  protection may be needed for sensitive deployments.
+
+## Screenshots
+
+Screenshots of the application interface will be added
+to demonstrate the dashboard, camera monitoring,
+profile management, and playback features.
+
+## Developer
+
+**Salah Ayash**
+
+Full-Stack, Mobile & Cloud Developer
+
+GitHub: https://github.com/salah804
+
+---
+
+Built with Flutter, PHP and MySQL.
+
