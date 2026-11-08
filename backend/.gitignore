@@ -1,0 +1,14 @@
+# Never commit credentials or private configuration.
+.env
+.env.*
+!.env.example
+private/
+**/private/
+cctv_config.php
+cctv_mail_config.php
+db_connection.php
+vendor/
+*.log
+*.sql.gz
+*.sql.zip
+*.bak

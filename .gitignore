@@ -1,0 +1,98 @@
+
+# ==========================================
+# MISCELLANEOUS
+# ==========================================
+
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# ==========================================
+# INTELLIJ / ANDROID STUDIO / VS CODE
+# ==========================================
+
+*.iml
+*.ipr
+*.iws
+.idea/
+.vscode/
+
+# ==========================================
+# FLUTTER / DART / PUB
+# ==========================================
+
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+
+# ==========================================
+# SYMBOLICATION / OBFUSCATION
+# ==========================================
+
+app.*.symbols
+app.*.map.json
+
+# ==========================================
+# ANDROID BUILD OUTPUTS
+# ==========================================
+
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# ==========================================
+# PRIVATE CONFIGURATION
+# ==========================================
+
+.env
+.env.*
+!.env.example
+
+**/private/
+**/cctv_config.php
+**/cctv_mail_config.php
+**/db_connection.php
+
+# ==========================================
+# ANDROID LOCAL CONFIGURATION
+# ==========================================
+
+**/local.properties
+**/key.properties
+
+# ==========================================
+# SIGNING KEYS / CERTIFICATES
+# ==========================================
+
+*.jks
+*.keystore
+*.pem
+*.p12
+*.pfx
+
+# ==========================================
+# BACKEND DEPENDENCIES
+# ==========================================
+
+**/vendor/
+
+# ==========================================
+# LOCAL / TEMPORARY FILES
+# ==========================================
+
+*.tmp
+*.bak
+*.backup
+*.old

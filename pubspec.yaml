@@ -1,0 +1,114 @@
+
+name: camera
+
+description: "CCTV Camera Management, Live Streaming and Playback Application"
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.4
+
+# ==========================================
+# DEPENDENCIES
+# ==========================================
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Backend API requests
+  http: ^1.1.0
+
+  # Local camera configurations and session data
+  shared_preferences: ^2.0.15
+
+  # Offline demo MP4 playback
+  video_player: ^2.6.5
+
+  # Real camera RTSP streaming and playback
+  flutter_vlc_player: ^7.4.2
+
+  # Notifications
+  fluttertoast: ^8.0.7
+
+  # Image selection
+  image_picker: ^0.8.4+4
+
+  # Date formatting
+  intl: ^0.17.0
+
+  # File and app storage
+  path_provider: ^2.0.11
+
+  # API and file requests
+  dio: ^5.0.0
+
+  # Device permissions
+  permission_handler: ^11.4.0
+
+  # Google Sign-In
+  google_sign_in: 6.3.0
+
+  # Secure login session storage
+  flutter_secure_storage: 9.2.4
+
+# ==========================================
+# DEVELOPMENT DEPENDENCIES
+# ==========================================
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^5.0.0
+
+  # Custom application launcher icons
+  flutter_launcher_icons: ^0.14.4
+
+# ==========================================
+# FLUTTER SETTINGS
+# ==========================================
+
+flutter:
+  uses-material-design: true
+
+  assets:
+
+    # Existing application images
+    - assets/camera2.jpg
+    - assets/camera3.jpg
+    - assets/camera33.png
+    - assets/camera44.png
+    - assets/forget-password.png
+    - assets/Rest-password1.png
+    - assets/profile.jpg
+    - assets/change_password.png
+    - assets/rec.jpg
+    - assets/cam.jpg
+    - assets/cam3.jpg
+
+    # New CCTV application icon
+    - assets/app_icon.png
+
+    # Offline CCTV demonstration videos
+    - assets/videos/
+
+# ==========================================
+# CUSTOM CCTV APPLICATION ICON
+# ==========================================
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+
+  # Main launcher icon
+  image_path: "assets/app_icon.png"
+
+  # iOS icon compatibility
+  remove_alpha_ios: true
+
+  # Android adaptive icon
+  adaptive_icon_background: "#080D18"
+  adaptive_icon_foreground: "assets/app_icon.png"
