@@ -296,7 +296,7 @@ Designed to combine mobile usability, account management, and camera monitoring 
 
 **Salah Ayash**
 
-Full-Stack, Mobile & web & Cloud Developer
+Full-Stack, Mobile, Web & Cloud Developer
 
 GitHub: https://github.com/salah804
 
