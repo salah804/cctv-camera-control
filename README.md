@@ -160,49 +160,137 @@ A complete database migration is not currently included.
 
 ## 📱 Application Screenshots
 
-Explore the CCTV Camera Control application through real screenshots captured from the Flutter Android app.
+<div align="center">
 
-### Application Showcase
+### Explore CCTV Camera Control
 
-<p align="center">
-  <img src="assets/showcase.png" width="850" alt="CCTV Camera Control Application Showcase">
-</p>
+A modern Flutter-based surveillance application combining secure account management, IP camera monitoring, and recorded video playback.
 
-### Camera Dashboard & User Profile
+**Secure Authentication • Camera Management • Live Monitoring • Video Playback**
+
+</div>
+
+---
+
+### 🚀 Application Showcase
+
+<div align="center">
+  <img src="assets/showcase.png" width="100%" alt="CCTV Camera Control application showcase">
+
+  <p><i>An overview of the CCTV Camera Control mobile application, featuring its modern dark interface and core functionality.</i></p>
+</div>
+
+---
+
+### 🔐 01 — Authentication & Registration
+
+Secure account access with traditional authentication, Google Sign-In, and user registration.
 
 <table>
   <tr>
-    <td align="center"><b>Camera Dashboard</b></td>
-    <td align="center"><b>User Profile</b></td>
+    <th align="center" width="50%">Login</th>
+    <th align="center" width="50%">Create Account</th>
   </tr>
   <tr>
     <td align="center">
-      <img src="assets/dashboard.png" width="300" alt="Camera Dashboard">
+      <img src="assets/login.png" width="100%" alt="CCTV Login Screen">
     </td>
     <td align="center">
-      <img src="assets/profile.png" width="300" alt="User Profile">
+      <img src="assets/create%20account.png" width="100%" alt="CCTV Registration Screen">
     </td>
+  </tr>
+  <tr>
+    <td align="center">Secure sign-in with Google authentication support.</td>
+    <td align="center">Account registration with password validation.</td>
   </tr>
 </table>
 
-### Account Security & Password Recovery
+---
+
+### 📹 02 — Camera Dashboard & Live Monitoring
+
+Monitor connected IP cameras, manage camera configurations, and explore the application's demonstration mode.
 
 <table>
   <tr>
-    <td align="center"><b>Account Security</b></td>
-    <td align="center"><b>Password Recovery</b></td>
+    <th align="center" width="50%">Camera Dashboard</th>
+    <th align="center" width="50%">CCTV Live Demo</th>
   </tr>
   <tr>
     <td align="center">
-      <img src="assets/account-security.png" width="300" alt="Account Security">
+      <img src="assets/dashboard.png" width="100%" alt="CCTV Camera Dashboard">
     </td>
     <td align="center">
-      <img src="assets/password-recovery.png" width="300" alt="Password Recovery">
+      <img src="assets/cctv-demo-live.png" width="100%" alt="CCTV Live Demonstration">
     </td>
+  </tr>
+  <tr>
+    <td align="center">Manage cameras and access monitoring features.</td>
+    <td align="center">Explore simulated live monitoring without a physical IP camera.</td>
   </tr>
 </table>
 
-> **Note:** Screenshots are captured from the application, with sensitive account information and camera network addresses concealed. Live streaming and playback require compatible cameras and network connectivity.
+---
+
+### 🎬 03 — Video Recording & Playback
+
+Access recorded video, navigate playback timelines, and control video playback.
+
+<div align="center">
+  <img src="assets/playback.png" width="85%" alt="CCTV Video Recording and Playback">
+
+  <p><i>Video playback with recording navigation and playback controls.</i></p>
+</div>
+
+---
+
+### 👤 04 — User Profile & Account Security
+
+Personalize your account information and access security settings.
+
+<table>
+  <tr>
+    <th align="center" width="50%">User Profile</th>
+    <th align="center" width="50%">Account Security</th>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="assets/profile.png" width="100%" alt="CCTV User Profile">
+    </td>
+    <td align="center">
+      <img src="assets/account-security.png" width="100%" alt="CCTV Account Security">
+    </td>
+  </tr>
+  <tr>
+    <td align="center">View and update personal details and profile photos.</td>
+    <td align="center">Manage password and account security options.</td>
+  </tr>
+</table>
+
+---
+
+### 🔑 05 — Password Recovery
+
+A dedicated password recovery flow helps users regain access to their accounts securely.
+
+<div align="center">
+  <img src="assets/password-recovery.png" width="65%" alt="CCTV Password Recovery">
+
+  <p><i>Secure email-based password recovery workflow.</i></p>
+</div>
+
+---
+
+<div align="center">
+
+### 🛡️ Built for Secure & Modern Surveillance
+
+**Flutter • Dart • PHP • MySQL • RTSP • VLC**
+
+Designed to combine mobile usability, account management, and camera monitoring in one application.
+
+</div>
+
 
 ## Developer
 
