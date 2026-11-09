@@ -208,7 +208,7 @@ Explore the CCTV Camera Control application through real screenshots captured fr
 
 **Salah Ayash**
 
-Full-Stack, Mobile & Cloud Developer
+Full-Stack, Mobile & web & Cloud Developer
 
 GitHub: https://github.com/salah804
 
