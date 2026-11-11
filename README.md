@@ -109,38 +109,69 @@ live video streaming, and recorded video playback.
 | Hosting | HelioHost |
 | Version Control | Git, GitHub |
 
-## Project Structure
+
+## 📁 Project Structure
 
 ```text
 camera/
-├── android/
-├── ios/
-├── lib/
-│   ├── main.dart
-│   ├── login.dart
-│   ├── register.dart
-│   ├── home.dart
-│   ├── profile.dart
-│   ├── RecordingScreen.dart
-│   ├── playback_screen.dart
-│   └── demo_screen.dart
-├── backend/
-│   ├── login.php
-│   ├── register.php
-│   ├── google_login.php
-│   ├── check_session.php
-│   ├── logout.php
-│   ├── change_password.php
+├── android/                  # Android application
+├── ios/                      # iOS project files
+├── web/                      # Flutter Web configuration
+│   ├── index.html            # Web entry point and Google Sign-In
+│   ├── manifest.json         # Web application metadata
+│   ├── favicon.png           # Browser tab icon
+│   └── icons/                # Web application icons
+│
+├── lib/                      # Flutter application source
+│   ├── main.dart             # Application entry point
+│   ├── login.dart            # Login and Google authentication
+│   ├── register.dart         # User registration
+│   ├── home.dart             # Dashboard and camera management
+│   ├── profile.dart          # User profile management
+│   ├── RecordingScreen.dart  # Camera recording interface
+│   ├── playback_screen.dart  # Recorded video playback
+│   ├── demo_screen.dart      # Interactive CCTV demonstration
+│   ├── web_camera_form.dart  # RTSP URL and IP camera configuration
+│   │
+│   ├── google_button.dart       # Platform-specific button export
+│   ├── google_button_web.dart   # Google Sign-In button for Web
+│   └── google_button_stub.dart  # Non-Web button implementation
+│
+├── backend/                  # PHP REST API
+│   ├── login.php             # User authentication
+│   ├── register.php          # User registration
+│   ├── google_login.php      # Google authentication backend
+│   ├── check_session.php     # Session validation
+│   ├── logout.php            # Secure logout
+│   ├── change_password.php   # Password management
 │   ├── request_password_reset.php
 │   ├── reset_password.php
-│   ├── getUserDetails.php
-│   ├── update_profile.php
-│   └── profile_auth.php
-├── assets/
-│   ├── app_icon.png
+│   ├── getUserDetails.php    # User information
+│   ├── update_profile.php    # Profile updates
+│   └── profile_auth.php      # Profile authentication
+│
+├── assets/                   # Application assets
+│   ├── app_icon.png          # CCTV application logo
 │   └── videos/
-└── pubspec.yaml
+│       ├── demo_camera1.mp4  # Sample CCTV footage
+│       └── demo_camera2.mp4  # Sample CCTV footage
+│
+├── pubspec.yaml              # Flutter dependencies and assets
+└── pubspec.lock              # Resolved package versions
 ```
+
+### 🌐 Deployment
+
+- **Android:** Release APK v1.0.0 hosted on HelioHost.
+- **Web:** Flutter Web application deployed on HelioHost.
+- **Backend:** PHP/MySQL API hosted on HelioHost.
+- **Source Code:** GitHub repository with separate Android and Web development branches.
+
+**Live Web App:** https://salahayash.helioho.st/cctv/web/
+
+**Android Download:** https://salahayash.helioho.st/cctv/
+
+> **Note:** The Web application supports RTSP URL and IP camera configuration, account management, and simulated CCTV footage. Direct RTSP video playback in browsers requires a compatible streaming gateway.
 
 ## Getting Started
 
