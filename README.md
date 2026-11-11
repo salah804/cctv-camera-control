@@ -19,15 +19,15 @@ and a modern dark-themed interface.
 
 ---
 
-## 🚀 Download CCTV Camera Control
+## 🚀 Download & Try CCTV Camera Control
 
-Experience CCTV Camera Control on your Android device.
+Experience CCTV Camera Control on your Android device or directly in your web browser.
 
 <div align="center">
 
 ### 📱 Android Application — v1.0.0
 
-**Live Monitoring • Recorded Playback • Secure Authentication**
+**Live RTSP Monitoring • Recorded Playback • Secure Authentication**
 
 [![Download APK](https://img.shields.io/badge/Download-Android_APK-22D3EE?style=for-the-badge&logo=android&logoColor=white)](https://salahayash.helioho.st/cctv/)
 
@@ -35,9 +35,23 @@ Experience CCTV Camera Control on your Android device.
 
 **Version:** 1.0.0 | **Platform:** Android | **APK Size:** ~105 MB
 
+---
+
+### 🌐 Flutter Web Application — Live
+
+**Camera Configuration • Interactive Demo • Google Sign-In • Responsive Design**
+
+[![Launch Web App](https://img.shields.io/badge/Launch-Web_Application-22D3EE?style=for-the-badge&logo=googlechrome&logoColor=white)](https://salahayash.helioho.st/cctv/web/)
+
+[![Web Status](https://img.shields.io/badge/Deployment-Live-16A34A?style=for-the-badge&logo=flutter&logoColor=white)](https://salahayash.helioho.st/cctv/web/)
+
+**Platform:** Web | **Framework:** Flutter | **Devices:** Desktop & Mobile Browsers
+
 </div>
 
-> **Note:** The APK is distributed directly by the developer through the official project website, not Google Play. Download and install it only from a source you trust.
+> **Android:** The APK is distributed directly by the developer through the official project website, not Google Play. Download and install it only from a source you trust.
+>
+> **Web:** Explore the CCTV dashboard, configure IP cameras using RTSP URLs or IP addresses, and watch simulated camera footage. Real RTSP streaming is currently supported in the Android application; browser-based RTSP playback requires a streaming gateway.
 
 ---
 
