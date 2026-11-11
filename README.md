@@ -17,6 +17,30 @@ and a modern dark-themed interface.
 
 ---
 
+---
+
+## 🚀 Download CCTV Camera Control
+
+Experience CCTV Camera Control on your Android device.
+
+<div align="center">
+
+### 📱 Android Application — v1.0.0
+
+**Live Monitoring • Recorded Playback • Secure Authentication**
+
+[![Download APK](https://img.shields.io/badge/Download-Android_APK-22D3EE?style=for-the-badge&logo=android&logoColor=white)](https://salahayash.helioho.st/cctv/)
+
+[![Official Website](https://img.shields.io/badge/Official-Download_Page-2563EB?style=for-the-badge&logo=googlechrome&logoColor=white)](https://salahayash.helioho.st/cctv/)
+
+**Version:** 1.0.0 | **Platform:** Android | **APK Size:** ~105 MB
+
+</div>
+
+> **Note:** The APK is distributed directly by the developer through the official project website, not Google Play. Download and install it only from a source you trust.
+
+---
+
 ## About the Project
 
 CCTV Camera Control is a mobile application designed
