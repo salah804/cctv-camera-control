@@ -1,6 +1,6 @@
-
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_vlc_player/flutter_vlc_player.dart';
@@ -13,6 +13,12 @@ import 'change_password.dart';
 import 'login.dart';
 import 'RecordingScreen.dart';
 import 'demo_screen.dart';
+import 'web_camera_form.dart';
+
+// ==========================================
+// CCTV CAMERA CONTROL
+// HOME SCREEN - ANDROID + WEB
+// ==========================================
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,9 +28,9 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  // ==========================================
+  // ========================================
   // THEME COLORS
-  // ==========================================
+  // ========================================
 
   static const Color _background = Color(0xFF080D18);
   static const Color _surface = Color(0xFF111C2D);
@@ -34,30 +40,26 @@ class _HomeScreenState extends State<HomeScreen> {
   static const Color _green = Color(0xFF45E0AD);
   static const Color _red = Color(0xFFFF818D);
 
-  // ==========================================
-  // AUTHENTICATION
-  // ==========================================
-
+  // ========================================
+  // BACKEND
+  // ========================================
 
   static const String _logoutUrl =
-      'https://salahayash.helioho.st/cctv-api//logout.php';
-
+      'https://salahayash.helioho.st/cctv-api/logout.php';
 
   final FlutterSecureStorage _secureStorage =
   const FlutterSecureStorage();
 
   bool _loggingOut = false;
 
-  // ==========================================
+  // ========================================
   // CAMERA STATE
-  // ==========================================
+  // ========================================
 
   List<Map<String, String>> _cameras = [];
 
   VlcPlayerController? _player;
-
   int? _activeCameraIndex;
-
   bool _changingStream = false;
 
   @override
@@ -66,9 +68,9 @@ class _HomeScreenState extends State<HomeScreen> {
     _loadCameras();
   }
 
-  // ==========================================
+  // ========================================
   // LOAD SAVED CAMERAS
-  // ==========================================
+  // ========================================
 
   Future<void> _loadCameras() async {
     try {
@@ -93,9 +95,14 @@ class _HomeScreenState extends State<HomeScreen> {
             url is String &&
             name.trim().isNotEmpty &&
             url.trim().isNotEmpty) {
+          final parsed = Uri.tryParse(url.trim());
+          final safeUrl = kIsWeb && parsed != null
+              ? parsed.replace(userInfo: '').toString()
+              : url.trim();
           loaded.add({
             'name': name.trim(),
-            'url': url.trim(),
+            'url': safeUrl,
+            if (item['mode'] == 'ip') 'mode': 'ip',
           });
         }
       }
@@ -110,26 +117,37 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ==========================================
+  // ========================================
   // SAVE CAMERAS
-  // ==========================================
+  // ========================================
 
   Future<void> _saveCameras() async {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      await prefs.setString(
-        'cameras',
-        jsonEncode(_cameras),
-      );
+      // On Web, strip embedded RTSP login credentials before persisting.
+      final camerasToSave = kIsWeb
+          ? _cameras.map((camera) {
+        final parsed = Uri.tryParse(camera['url'] ?? '');
+        return <String, String>{
+          'name': camera['name'] ?? '',
+          'url': parsed == null
+              ? (camera['url'] ?? '')
+              : parsed.replace(userInfo: '').toString(),
+          if (camera['mode'] == 'ip') 'mode': 'ip',
+        };
+      }).toList()
+          : _cameras;
+
+      await prefs.setString('cameras', jsonEncode(camerasToSave));
     } catch (_) {
       _showMessage('Could not save camera changes.');
     }
   }
 
-  // ==========================================
+  // ========================================
   // NOTIFICATIONS
-  // ==========================================
+  // ========================================
 
   void _showMessage(String message) {
     if (!mounted) return;
@@ -143,7 +161,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Display the camera host without its password.
+  // ========================================
+  // CAMERA HOST LABEL
+  // ========================================
+
   String _cameraHost(String url) {
     final uri = Uri.tryParse(url);
 
@@ -156,9 +177,10 @@ class _HomeScreenState extends State<HomeScreen> {
         : uri.host;
   }
 
-  // ==========================================
+  // ========================================
   // VLC STREAM MANAGEMENT
-  // ==========================================
+  // ANDROID ONLY
+  // ========================================
 
   Future<void> _releasePlayer() async {
     final old = _player;
@@ -184,7 +206,23 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (_) {}
   }
 
+  // ========================================
+  // START CAMERA STREAM
+  // ========================================
+
   Future<void> _startStream(int index) async {
+    // A browser can't play raw RTSP. Selecting a Web camera is safe,
+    // but streaming will require an authenticated WebRTC/HLS gateway.
+    if (kIsWeb) {
+      if (index < 0 || index >= _cameras.length) return;
+      setState(() => _activeCameraIndex = index);
+      _showMessage(
+        'Camera selected. Live preview requires a secure '
+            'RTSP-to-WebRTC/HLS gateway (not configured yet).',
+      );
+      return;
+    }
+
     if (_changingStream ||
         index < 0 ||
         index >= _cameras.length) {
@@ -227,7 +265,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // ========================================
+  // STOP CAMERA STREAM
+  // ========================================
+
   Future<void> _stopStream() async {
+    if (kIsWeb) {
+      if (mounted) setState(() => _activeCameraIndex = null);
+      return;
+    }
+
     if (_changingStream || _player == null) return;
 
     setState(() {
@@ -245,15 +292,22 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ==========================================
+  // ========================================
   // NAVIGATION
-  // ==========================================
+  // ========================================
 
   void _openRecordings() {
+    // Web users open simulated recordings.
+    if (kIsWeb) {
+      _openDemo();
+      return;
+    }
+
+    // Android behavior remains unchanged.
     Navigator.push(
       context,
       MaterialPageRoute<void>(
-        builder: (_) => RecordingScreen(),
+        builder: (_) => const RecordingScreen(),
       ),
     );
   }
@@ -276,9 +330,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ==========================================
+  // ========================================
   // SECURE LOGOUT
-  // ==========================================
+  // ========================================
 
   Future<void> _logout() async {
     if (_loggingOut) return;
@@ -288,15 +342,14 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      // STEP 1: Read the saved Google session token.
+      // Read the saved PHP session token.
       final token = await _secureStorage.read(
         key: 'session_token',
       );
 
-      // STEP 2: Revoke this session in MySQL.
+      // Revoke the server-side session.
       if (token != null && token.isNotEmpty) {
-        final response = await http
-            .post(
+        final response = await http.post(
           Uri.parse(_logoutUrl),
           headers: {
             'Accept': 'application/json',
@@ -305,8 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
           body: {
             'probe': '1',
           },
-        )
-            .timeout(
+        ).timeout(
           const Duration(seconds: 15),
         );
 
@@ -314,7 +366,6 @@ class _HomeScreenState extends State<HomeScreen> {
           'Logout HTTP status: ${response.statusCode}',
         );
 
-        // 401 indicates the token is already invalid.
         if (response.statusCode != 200 &&
             response.statusCode != 401) {
           throw StateError(
@@ -334,10 +385,12 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
 
-      // STEP 3: Stop any active camera stream.
+      // Stop any active Android camera stream.
       await _releasePlayer();
 
-      // STEP 4: Sign out of Google within this app.
+      // Sign out of Google locally.
+      // A failed SDK sign-out must not leave
+      // the PHP session active.
       try {
         await GoogleSignIn().signOut();
       } catch (_) {
@@ -346,9 +399,10 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       }
 
-      // STEP 5: Delete saved session token.
-
-      await _secureStorage.delete(key: 'session_token');
+      // Clear the app session.
+      await _secureStorage.delete(
+        key: 'session_token',
+      );
 
       final prefs = await SharedPreferences.getInstance();
 
@@ -357,7 +411,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       if (!mounted) return;
 
-      // STEP 7: Open Login and clear navigation history.
+      // Return to login.
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute<void>(
           builder: (_) => const LoginScreen(),
@@ -382,14 +436,43 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-
-  // --------------------------------------------------
-  // ADD / EDIT CAMERA - FIXED
-  // --------------------------------------------------
+  // ========================================
+  // ADD / EDIT CAMERA
+  // ========================================
 
   Future<void> _showCameraForm({
     int? editingIndex,
   }) async {
+    // Web has its own form. Android's RTSP/VLC form is left unchanged.
+    if (kIsWeb) {
+      if (editingIndex != null &&
+          (editingIndex < 0 || editingIndex >= _cameras.length)) {
+        return;
+      }
+      final updated = await showWebCameraForm(
+        context,
+        initial: editingIndex == null ? null : _cameras[editingIndex],
+      );
+      if (!mounted || updated == null) return;
+      setState(() {
+        if (editingIndex != null) {
+          _cameras[editingIndex] = updated;
+          if (_activeCameraIndex == editingIndex) {
+            _activeCameraIndex = null;
+          }
+        } else {
+          _cameras.add(updated);
+        }
+      });
+      await _saveCameras();
+      if (!mounted) return;
+      _showMessage(
+        'Camera configuration saved locally. '
+            'Live preview needs a streaming gateway.',
+      );
+      return;
+    }
+
     final editing = editingIndex != null;
 
     if (editingIndex != null &&
@@ -407,10 +490,6 @@ class _HomeScreenState extends State<HomeScreen> {
     String cameraName = initial?['name'] ?? '';
     String cameraUrl = initial?['url'] ?? '';
 
-    // No manually managed TextEditingControllers.
-    // Flutter will dispose the form fields when
-    // the bottom sheet is fully removed.
-
     final updated =
     await showModalBottomSheet<Map<String, String>>(
       context: context,
@@ -427,7 +506,10 @@ class _HomeScreenState extends State<HomeScreen> {
           child: SingleChildScrollView(
             child: Container(
               padding: const EdgeInsets.fromLTRB(
-                22, 18, 22, 28,
+                22,
+                18,
+                22,
+                28,
               ),
               decoration: const BoxDecoration(
                 color: _surface,
@@ -439,8 +521,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 key: formKey,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment:
-                  CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Center(
                       child: Container(
@@ -456,17 +537,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 24),
 
-                    // HEADER + CLOSE BUTTON
-
+                    // Header.
                     Row(
                       children: [
                         const Icon(
                           Icons.add_a_photo_outlined,
                           color: _cyan,
                         ),
-
                         const SizedBox(width: 12),
-
                         Expanded(
                           child: Text(
                             editing
@@ -479,7 +557,6 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                         ),
-
                         IconButton(
                           onPressed: () {
                             FocusScope.of(
@@ -511,8 +588,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 24),
 
-                    // CAMERA NAME
-
+                    // Camera name.
                     TextFormField(
                       initialValue: cameraName,
                       style: const TextStyle(
@@ -533,15 +609,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         return null;
                       },
                       onSaved: (value) {
-                        cameraName =
-                            value?.trim() ?? '';
+                        cameraName = value?.trim() ?? '';
                       },
                     ),
 
                     const SizedBox(height: 16),
 
-                    // RTSP URL
-
+                    // RTSP URL.
                     TextFormField(
                       initialValue: cameraUrl,
                       style: const TextStyle(
@@ -557,11 +631,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         'rtsp://camera-host:554/stream',
                       ),
                       validator: (value) {
-                        final input =
-                            value?.trim() ?? '';
-
-                        final uri =
-                        Uri.tryParse(input);
+                        final input = value?.trim() ?? '';
+                        final uri = Uri.tryParse(input);
 
                         if (uri == null ||
                             (uri.scheme.toLowerCase() !=
@@ -576,15 +647,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         return null;
                       },
                       onSaved: (value) {
-                        cameraUrl =
-                            value?.trim() ?? '';
+                        cameraUrl = value?.trim() ?? '';
                       },
                     ),
 
                     const SizedBox(height: 16),
 
-                    // STORAGE WARNING
-
+                    // Storage notice.
                     const Row(
                       crossAxisAlignment:
                       CrossAxisAlignment.start,
@@ -611,8 +680,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     const SizedBox(height: 25),
 
-                    // SAVE CAMERA BUTTON
-
+                    // Save.
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton.icon(
@@ -630,10 +698,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           FocusScope.of(
                             sheetContext,
                           ).unfocus();
-
-                          // Return the validated data.
-                          // HomeScreen will update its
-                          // state after this popup closes.
 
                           Navigator.of(
                             sheetContext,
@@ -655,8 +719,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         style: FilledButton.styleFrom(
                           backgroundColor: _cyan,
                           foregroundColor: _background,
-                          padding:
-                          const EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                             vertical: 16,
                           ),
                           shape: RoundedRectangleBorder(
@@ -675,8 +738,6 @@ class _HomeScreenState extends State<HomeScreen> {
       },
     );
 
-    // User pressed X or dismissed the popup.
-    // Nothing to save.
     if (!mounted || updated == null) {
       return;
     }
@@ -709,11 +770,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-
-
-  // ==========================================
+  // ========================================
   // CAMERA FIELD DESIGN
-  // ==========================================
+  // ========================================
 
   InputDecoration _fieldDecoration(
       String label,
@@ -723,8 +782,13 @@ class _HomeScreenState extends State<HomeScreen> {
     return InputDecoration(
       labelText: label,
       hintText: hint,
-      prefixIcon: Icon(icon, color: _cyan),
-      labelStyle: const TextStyle(color: _muted),
+      prefixIcon: Icon(
+        icon,
+        color: _cyan,
+      ),
+      labelStyle: const TextStyle(
+        color: _muted,
+      ),
       hintStyle: TextStyle(
         color: _muted.withOpacity(0.55),
       ),
@@ -761,9 +825,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ==========================================
+  // ========================================
   // DELETE CAMERA
-  // ==========================================
+  // ========================================
 
   Future<void> _deleteCamera(int index) async {
     final name = _cameras[index]['name']!;
@@ -817,8 +881,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } else if (_activeCameraIndex != null &&
         _activeCameraIndex! > index) {
       setState(() {
-        _activeCameraIndex =
-            _activeCameraIndex! - 1;
+        _activeCameraIndex = _activeCameraIndex! - 1;
       });
     }
 
@@ -831,9 +894,9 @@ class _HomeScreenState extends State<HomeScreen> {
     _showMessage('Camera removed.');
   }
 
-  // ==========================================
+  // ========================================
   // HOME SCREEN
-  // ==========================================
+  // ========================================
 
   @override
   Widget build(BuildContext context) {
@@ -954,9 +1017,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ==========================================
+  // ========================================
   // HERO SECTION
-  // ==========================================
+  // ========================================
 
   Widget _buildHero() {
     return Container(
@@ -990,7 +1053,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Text(
                 'SMART MONITORING WORKSPACE',
                 style: TextStyle(
-                  color: _cyan.withValues(alpha: 0.22),
+                  color: _cyan.withValues(alpha: 0.75),
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.5,
@@ -1001,9 +1064,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const SizedBox(height: 14),
 
-          const Text(
-            'Your cameras.\nOne control center.',
-            style: TextStyle(
+          Text(
+            kIsWeb
+                ? 'Explore CCTV.\nRight in your browser.'
+                : 'Your cameras.\nOne control center.',
+            style: const TextStyle(
               fontSize: 27,
               height: 1.15,
               color: Colors.white,
@@ -1013,10 +1078,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
           const SizedBox(height: 10),
 
-          const Text(
-            'Connect your own IP cameras, '
+          Text(
+            kIsWeb
+                ? 'Add cameras using an RTSP URL or IP address. '
+                'Live browser video requires a secure gateway.'
+                : 'Connect your own IP cameras, '
                 'view live streams, and access recordings.',
-            style: TextStyle(
+            style: const TextStyle(
               color: Color(0xFFC2D5E4),
               height: 1.5,
             ),
@@ -1030,10 +1098,7 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               FilledButton.icon(
                 onPressed: () => _showCameraForm(),
-                icon: const Icon(
-                  Icons.add,
-                  size: 20,
-                ),
+                icon: const Icon(Icons.add, size: 20),
                 label: const Text('Add Camera'),
                 style: FilledButton.styleFrom(
                   backgroundColor: _cyan,
@@ -1055,7 +1120,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icons.video_library_outlined,
                   size: 19,
                 ),
-                label: const Text('Recordings'),
+                label: Text(
+                  kIsWeb
+                      ? 'Demo Recordings'
+                      : 'Recordings',
+                ),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.white,
                   side: BorderSide(
@@ -1125,20 +1194,28 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
+
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    _player != null
+                    kIsWeb
+                        ? Icons.language
+                        : _player != null
                         ? Icons.circle
                         : Icons.circle_outlined,
-                    color:
-                    _player != null ? _green : _muted,
-                    size: 11,
+                    color: kIsWeb
+                        ? _green
+                        : _player != null
+                        ? _green
+                        : _muted,
+                    size: kIsWeb ? 16 : 11,
                   ),
                   const SizedBox(width: 7),
                   Text(
-                    _player != null
+                    kIsWeb
+                        ? 'RTSP gateway needed'
+                        : _player != null
                         ? 'Stream selected'
                         : 'No active stream',
                     style: const TextStyle(
@@ -1155,11 +1232,142 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ==========================================
+  // ========================================
+  // WEB BROWSER PREVIEW PANEL
+  // ========================================
+
+  Widget _buildBrowserPreviewPanel() {
+    final selected = _activeCameraIndex != null &&
+        _activeCameraIndex! < _cameras.length
+        ? _cameras[_activeCameraIndex!]
+        : null;
+
+    return _panel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(
+                Icons.live_tv_outlined,
+                color: _cyan,
+                size: 21,
+              ),
+              SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  'Camera Preview',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 18),
+
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: const Color(0xFF02060D),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: _border),
+            ),
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  mainAxisAlignment:
+                  MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.smart_display_outlined,
+                      color: _cyan,
+                      size: 42,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      selected == null
+                          ? 'No camera selected'
+                          : selected['name'] ?? 'Camera selected',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Text(
+                      selected == null
+                          ? 'Add or select a camera, or try Demo Mode'
+                          : 'Configuration saved. Live gateway pending.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: _muted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 17),
+
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _openDemo,
+              icon: const Icon(
+                Icons.play_circle_outline,
+              ),
+              label: const Text('Open CCTV Demo'),
+              style: FilledButton.styleFrom(
+                backgroundColor: _cyan,
+                foregroundColor: _background,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 15,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          const Text(
+            'Real RTSP cameras need a secure WebRTC/HLS gateway '
+                'before they can play in a browser. '
+                'Demo Mode uses sample footage.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: _muted,
+              fontSize: 12,
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ========================================
   // LIVE CAMERA PREVIEW
-  // ==========================================
+  // ========================================
 
   Widget _buildPreviewPanel() {
+    if (kIsWeb) {
+      return _buildBrowserPreviewPanel();
+    }
+
     final controller = _player;
 
     return _panel(
@@ -1344,11 +1552,12 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ==========================================
-  // SAVED CAMERAS
-  // ==========================================
+  // ========================================
+  // SAVED CAMERAS PANEL
+  // ========================================
 
   Widget _buildCamerasPanel() {
+    // Shared camera-management panel for Android and Web.
     return _panel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1393,6 +1602,16 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
+          if (kIsWeb) ...[
+            const SizedBox(height: 10),
+            const Text(
+              'Add an RTSP URL or IP camera configuration. '
+                  'Live browser playback will be enabled after '
+                  'connecting a secure WebRTC/HLS gateway.',
+              style: TextStyle(color: _muted, fontSize: 12, height: 1.5),
+            ),
+          ],
+
           const SizedBox(height: 18),
 
           if (_cameras.isEmpty)
@@ -1423,9 +1642,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 7),
-                  const Text(
-                    'Add an RTSP address to '
-                        'start watching.',
+                  Text(
+                    kIsWeb
+                        ? 'Add an RTSP URL or IP address to configure a camera.'
+                        : 'Add an RTSP address to start watching.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: _muted,
@@ -1445,9 +1665,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ==========================================
+  // ========================================
   // CAMERA CARD
-  // ==========================================
+  // ========================================
 
   Widget _cameraCard(int index) {
     final camera = _cameras[index];
@@ -1526,7 +1746,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 Icon(
-                  active
+                  kIsWeb && active
+                      ? Icons.check_circle_outline
+                      : active
                       ? Icons.graphic_eq
                       : Icons.play_circle_outline,
                   color: _cyan,
@@ -1578,9 +1800,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ==========================================
+  // ========================================
   // REUSABLE PANEL
-  // ==========================================
+  // ========================================
 
   Widget _panel({
     required Widget child,
@@ -1599,9 +1821,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ==========================================
+  // ========================================
   // STATUS LABEL
-  // ==========================================
+  // ========================================
 
   Widget _pill(
       String label, {
@@ -1631,9 +1853,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ==========================================
+  // ========================================
   // NAVIGATION DRAWER
-  // ==========================================
+  // ========================================
 
   Widget _buildDrawer() {
     return Drawer(
@@ -1693,9 +1915,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               title: const Text(
                 'Profile',
-                style: TextStyle(
-                  color: Colors.white,
-                ),
+                style: TextStyle(color: Colors.white),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -1710,9 +1930,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               title: const Text(
                 'Change Password',
-                style: TextStyle(
-                  color: Colors.white,
-                ),
+                style: TextStyle(color: Colors.white),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -1734,9 +1952,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               title: const Text(
                 'Recordings',
-                style: TextStyle(
-                  color: Colors.white,
-                ),
+                style: TextStyle(color: Colors.white),
               ),
               onTap: () {
                 Navigator.pop(context);
@@ -1751,9 +1967,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               title: const Text(
                 'Demo Mode',
-                style: TextStyle(
-                  color: Colors.white,
-                ),
+                style: TextStyle(color: Colors.white),
               ),
               subtitle: const Text(
                 'Try without an IP camera',
@@ -1771,7 +1985,6 @@ class _HomeScreenState extends State<HomeScreen> {
             const Spacer(),
             const Divider(color: _border),
 
-            // Secure logout button.
             ListTile(
               leading: const Icon(
                 Icons.logout,
@@ -1779,9 +1992,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               title: const Text(
                 'Logout',
-                style: TextStyle(
-                  color: Colors.white,
-                ),
+                style: TextStyle(color: Colors.white),
               ),
               trailing: _loggingOut
                   ? const SizedBox(
@@ -1808,9 +2019,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // ==========================================
+  // ========================================
   // CLEANUP
-  // ==========================================
+  // ========================================
 
   @override
   void dispose() {

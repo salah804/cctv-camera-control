@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'playback_screen.dart';
 
 // Match the futuristic theme used in home.dart.
 class _RecordingTheme {

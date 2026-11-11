@@ -1,6 +1,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 
 class DemoCamera {
   final String name;
@@ -80,6 +82,10 @@ class _DemoScreenState extends State<DemoScreen> {
   ];
 
   VideoPlayerController? _controller;
+
+  // Scroll controller for desktop and mobile.
+  final ScrollController _pageScrollController =
+  ScrollController();
 
   int _selectedCamera = 0;
   int _loadId = 0;
@@ -167,11 +173,13 @@ class _DemoScreenState extends State<DemoScreen> {
     _loadId++;
 
     final player = _controller;
+
     if (player != null) {
       player.removeListener(_onVideoChanged);
       player.dispose();
     }
 
+    _pageScrollController.dispose();
     super.dispose();
   }
 
@@ -198,6 +206,7 @@ class _DemoScreenState extends State<DemoScreen> {
     });
 
     final player = _controller;
+
     if (player == null || !player.value.isInitialized) {
       return;
     }
@@ -241,18 +250,20 @@ class _DemoScreenState extends State<DemoScreen> {
   Future<void> _seekRelative(int seconds) async {
     if (!_ready || _liveMode) return;
 
-    final current = _controller!.value.position.inMilliseconds;
+    final current =
+        _controller!.value.position.inMilliseconds;
+
     await _seekToMilliseconds(current + seconds * 1000);
   }
 
   Future<void> _jumpToSegment(int index) async {
     if (!_ready || _liveMode) return;
 
-    final duration = _controller!.value.duration.inMilliseconds;
+    final duration =
+        _controller!.value.duration.inMilliseconds;
 
-    final target = (
-        duration * segments[index].videoFraction
-    ).round();
+    final target =
+    (duration * segments[index].videoFraction).round();
 
     await _seekToMilliseconds(target);
     await _controller!.play();
@@ -269,14 +280,19 @@ class _DemoScreenState extends State<DemoScreen> {
   int get _activeSegment {
     if (!_ready) return 0;
 
-    final duration = _controller!.value.duration.inMilliseconds;
+    final duration =
+        _controller!.value.duration.inMilliseconds;
+
     if (duration <= 0) return 0;
 
-    final position = _controller!.value.position.inMilliseconds;
+    final position =
+        _controller!.value.position.inMilliseconds;
+
     final fraction = position / duration;
 
     if (fraction < 1 / 3) return 0;
     if (fraction < 2 / 3) return 1;
+
     return 2;
   }
 
@@ -319,7 +335,9 @@ class _DemoScreenState extends State<DemoScreen> {
   }
 
   String _formatDuration(Duration duration) {
-    final minutes = duration.inMinutes.toString().padLeft(2, '0');
+    final minutes =
+    duration.inMinutes.toString().padLeft(2, '0');
+
     final seconds =
     (duration.inSeconds % 60).toString().padLeft(2, '0');
 
@@ -329,6 +347,7 @@ class _DemoScreenState extends State<DemoScreen> {
   String _dateText(DateTime date) {
     final month = date.month.toString().padLeft(2, '0');
     final day = date.day.toString().padLeft(2, '0');
+
     return '${date.year}-$month-$day';
   }
 
@@ -618,8 +637,10 @@ class _DemoScreenState extends State<DemoScreen> {
 
   Widget _buildControls() {
     final player = _controller;
+
     final duration =
     _ready ? player!.value.duration : Duration.zero;
+
     final position =
     _ready ? player!.value.position : Duration.zero;
 
@@ -656,8 +677,7 @@ class _DemoScreenState extends State<DemoScreen> {
               const SizedBox(width: 14),
               IconButton.filled(
                 tooltip: 'Play / Pause',
-                onPressed:
-                _ready ? _togglePlayback : null,
+                onPressed: _ready ? _togglePlayback : null,
                 style: IconButton.styleFrom(
                   backgroundColor: cyan,
                   foregroundColor: bg,
@@ -797,11 +817,9 @@ class _DemoScreenState extends State<DemoScreen> {
                       ),
                     ),
                   ),
-
                   for (int i = 0; i < segments.length; i++)
                     Positioned(
-                      left: width *
-                          segments[i].startHour / 24,
+                      left: width * segments[i].startHour / 24,
                       width: width *
                           (segments[i].endHour -
                               segments[i].startHour) /
@@ -833,19 +851,28 @@ class _DemoScreenState extends State<DemoScreen> {
             ),
             const SizedBox(height: 8),
             const Row(
-              mainAxisAlignment:
-              MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('00:00',
-                    style: TextStyle(color: muted, fontSize: 10)),
-                Text('06:00',
-                    style: TextStyle(color: muted, fontSize: 10)),
-                Text('12:00',
-                    style: TextStyle(color: muted, fontSize: 10)),
-                Text('18:00',
-                    style: TextStyle(color: muted, fontSize: 10)),
-                Text('24:00',
-                    style: TextStyle(color: muted, fontSize: 10)),
+                Text(
+                  '00:00',
+                  style: TextStyle(color: muted, fontSize: 10),
+                ),
+                Text(
+                  '06:00',
+                  style: TextStyle(color: muted, fontSize: 10),
+                ),
+                Text(
+                  '12:00',
+                  style: TextStyle(color: muted, fontSize: 10),
+                ),
+                Text(
+                  '18:00',
+                  style: TextStyle(color: muted, fontSize: 10),
+                ),
+                Text(
+                  '24:00',
+                  style: TextStyle(color: muted, fontSize: 10),
+                ),
               ],
             ),
           ],
@@ -866,7 +893,6 @@ class _DemoScreenState extends State<DemoScreen> {
             Icons.access_time_rounded,
           ),
           const SizedBox(height: 16),
-
           const Text(
             'Selected Date',
             style: TextStyle(
@@ -875,7 +901,6 @@ class _DemoScreenState extends State<DemoScreen> {
             ),
           ),
           const SizedBox(height: 7),
-
           OutlinedButton.icon(
             onPressed: _pickDate,
             icon: const Icon(Icons.calendar_month_outlined),
@@ -885,13 +910,9 @@ class _DemoScreenState extends State<DemoScreen> {
               side: const BorderSide(color: border),
             ),
           ),
-
           const SizedBox(height: 20),
-
           _buildTimelineRail(),
-
           const SizedBox(height: 11),
-
           const Row(
             children: [
               Icon(
@@ -911,9 +932,7 @@ class _DemoScreenState extends State<DemoScreen> {
               ),
             ],
           ),
-
           const SizedBox(height: 21),
-
           const Text(
             'Available Recording Segments',
             style: TextStyle(
@@ -922,9 +941,7 @@ class _DemoScreenState extends State<DemoScreen> {
               fontWeight: FontWeight.w800,
             ),
           ),
-
           const SizedBox(height: 12),
-
           for (int i = 0; i < segments.length; i++) ...[
             InkWell(
               onTap: () => _jumpToSegment(i),
@@ -952,13 +969,10 @@ class _DemoScreenState extends State<DemoScreen> {
                       color: cyan,
                       size: 27,
                     ),
-
                     const SizedBox(width: 12),
-
                     Expanded(
                       child: Column(
-                        crossAxisAlignment:
-                        CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             '${segments[i].name} Recording',
@@ -980,7 +994,6 @@ class _DemoScreenState extends State<DemoScreen> {
                         ],
                       ),
                     ),
-
                     const Icon(
                       Icons.chevron_right,
                       color: cyan,
@@ -989,13 +1002,10 @@ class _DemoScreenState extends State<DemoScreen> {
                 ),
               ),
             ),
-
             if (i != segments.length - 1)
               const SizedBox(height: 9),
           ],
-
           const SizedBox(height: 19),
-
           const Text(
             'DEMO NOTICE: The dates and recording hours '
                 'are simulated. Each timeline segment jumps '
@@ -1012,6 +1022,10 @@ class _DemoScreenState extends State<DemoScreen> {
     );
   }
 
+  // ==========================================
+  // RESPONSIVE WEB + MOBILE DEMO LAYOUT
+  // ==========================================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1021,48 +1035,69 @@ class _DemoScreenState extends State<DemoScreen> {
         foregroundColor: Colors.white,
         title: const Text(
           'CCTV Demo',
-          style: TextStyle(fontWeight: FontWeight.w800),
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+          ),
         ),
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(18, 16, 18, 35),
-          children: [
-            _buildHeader(),
-            const SizedBox(height: 20),
-
-            _buildModeSelector(),
-            const SizedBox(height: 16),
-
-            _buildVideoPanel(),
-            const SizedBox(height: 16),
-
-            _buildControls(),
-
-            if (!_liveMode) ...[
-              const SizedBox(height: 16),
-              _buildTimeline(),
-            ],
-
-            const SizedBox(height: 16),
-            _buildCameraList(),
-
-            const SizedBox(height: 28),
-
-            const Center(
-              child: Text(
-                'OFFLINE CCTV DEMONSTRATION\n'
-                    'NO REAL CAMERA CONNECTED',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: muted,
-                  fontSize: 11,
-                  letterSpacing: 0.7,
-                  height: 1.7,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: kIsWeb ? 560 : double.infinity,
+            ),
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(
+                scrollbars: false,
+                dragDevices: {
+                  PointerDeviceKind.touch,
+                  PointerDeviceKind.mouse,
+                  PointerDeviceKind.trackpad,
+                  PointerDeviceKind.stylus,
+                },
+              ),
+              child: Scrollbar(
+                controller: _pageScrollController,
+                thumbVisibility: kIsWeb,
+                interactive: true,
+                child: ListView(
+                  controller: _pageScrollController,
+                  padding: const EdgeInsets.fromLTRB(
+                    16, 16, 16, 35,
+                  ),
+                  children: [
+                    _buildHeader(),
+                    const SizedBox(height: 20),
+                    _buildModeSelector(),
+                    const SizedBox(height: 16),
+                    _buildVideoPanel(),
+                    const SizedBox(height: 16),
+                    _buildControls(),
+                    if (!_liveMode) ...[
+                      const SizedBox(height: 16),
+                      _buildTimeline(),
+                    ],
+                    const SizedBox(height: 16),
+                    _buildCameraList(),
+                    const SizedBox(height: 28),
+                    const Center(
+                      child: Text(
+                        'OFFLINE CCTV DEMONSTRATION\n'
+                            'NO REAL CAMERA CONNECTED',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: muted,
+                          fontSize: 11,
+                          letterSpacing: 0.7,
+                          height: 1.7,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

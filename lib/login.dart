@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,23 +12,22 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'home.dart';
 import 'register.dart';
 import 'demo_screen.dart';
+import 'google_button.dart';
 import 'package:camera/forgot%20password.dart';
 
 // ==========================================
 // CCTV CAMERA CONTROL
-// LOGIN SCREEN
+// LOGIN SCREEN - ANDROID + WEB
 // ==========================================
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  State<LoginScreen> createState() =>
-      _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-
   // ========================================
   // THEME COLORS
   // ========================================
@@ -40,22 +40,19 @@ class _LoginScreenState extends State<LoginScreen> {
   static const Color green = Color(0xFF4ADE80);
 
   // ========================================
-  // PHP BACKEND CONFIGURATION
+  // PHP BACKEND
   // ========================================
 
-  // Working regular Login URL.
   static const String loginUrl =
       'https://salahayash.helioho.st/cctv-api/login.php';
-
-  // Google Login URL.
-  // Can still be overridden with --dart-define.
 
   static const String googleLoginUrl =
       'https://salahayash.helioho.st/cctv-api/google_login.php';
 
+  // Existing Web OAuth Client ID.
+  // Android uses this as serverClientId.
+  // Web reads its client ID from web/index.html.
 
-
-  // Google Web OAuth Client ID.
   static const String googleWebClientId =
       '628625399302-8orvhe3gidkdvfs7kt4lc8h5g0994qa2.apps.googleusercontent.com';
 
@@ -75,17 +72,54 @@ class _LoginScreenState extends State<LoginScreen> {
   final FlutterSecureStorage _secureStorage =
   const FlutterSecureStorage();
 
-  late final GoogleSignIn _googleSignIn =
-  GoogleSignIn(
-    serverClientId: googleWebClientId,
+  // ========================================
+  // GOOGLE SIGN-IN
+  // ========================================
+
+  late final GoogleSignIn _googleSignIn = GoogleSignIn(
+    serverClientId: kIsWeb ? null : googleWebClientId,
     scopes: const [
       'email',
       'profile',
     ],
   );
 
+  StreamSubscription<GoogleSignInAccount?>?
+  _googleUserSubscription;
+
   bool _busy = false;
   bool _hidePassword = true;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Flutter Web:
+    // Google's official button emits account changes.
+    // We use that account to obtain a verified ID token.
+
+    if (kIsWeb) {
+      _googleUserSubscription =
+          _googleSignIn.onCurrentUserChanged.listen(
+                (GoogleSignInAccount? account) {
+              if (account != null && mounted) {
+                _processGoogleAccount(account);
+              }
+            },
+            onError: (Object error) {
+              debugPrint(
+                'Google Web event failed: ${error.runtimeType}',
+              );
+
+              if (mounted) {
+                _showMessage(
+                  'Google authentication failed. Please try again.',
+                );
+              }
+            },
+          );
+    }
+  }
 
   // ========================================
   // CLEANUP
@@ -93,8 +127,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   void dispose() {
+    _googleUserSubscription?.cancel();
+
     _usernameController.dispose();
     _passwordController.dispose();
+
     super.dispose();
   }
 
@@ -132,8 +169,7 @@ class _LoginScreenState extends State<LoginScreen> {
       dynamic data,
       String fallback,
       ) {
-    if (data is Map &&
-        data['message'] is String) {
+    if (data is Map && data['message'] is String) {
       return data['message'] as String;
     }
 
@@ -141,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ========================================
-  // HTTPS ENDPOINT VALIDATION
+  // HTTPS VALIDATION
   // ========================================
 
   Uri? _httpsEndpoint(String url) {
@@ -164,7 +200,6 @@ class _LoginScreenState extends State<LoginScreen> {
     required Map<String, dynamic> responseData,
     required String authMethod,
   }) async {
-
     final user = responseData['user'];
     final token = responseData['session_token'];
 
@@ -186,22 +221,19 @@ class _LoginScreenState extends State<LoginScreen> {
       );
     }
 
-    // Store session token securely.
+    // Keep server session handling unchanged.
     await _secureStorage.write(
       key: 'session_token',
       value: token,
     );
 
-    final prefs =
-    await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
     await prefs.setString(
       'username',
       username,
     );
 
-    // Used for interface presentation.
-    // PHP independently verifies identity.
     await prefs.setString(
       'auth_method',
       authMethod,
@@ -216,7 +248,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => const HomeScreen(),
       ),
     );
@@ -224,7 +256,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _openRegister() {
     Navigator.of(context).push(
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => const RegisterPage(),
       ),
     );
@@ -232,7 +264,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _openForgotPassword() {
     Navigator.of(context).push(
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => const ForgotPasswordPage(),
       ),
     );
@@ -240,7 +272,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _openDemo() {
     Navigator.of(context).push(
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => const DemoScreen(),
       ),
     );
@@ -271,8 +303,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final username =
     _usernameController.text.trim();
 
-    final password =
-        _passwordController.text;
+    final password = _passwordController.text;
 
     setState(() {
       _busy = true;
@@ -300,14 +331,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode != 200 ||
           !_isSuccess(decoded)) {
-
         _showMessage(
           _serverMessage(
             decoded,
             'Invalid username or password.',
           ),
         );
-
         return;
       }
 
@@ -317,7 +346,6 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
 
-      // Store the PHP server-side session.
       await _saveAuthenticatedSession(
         responseData: decoded,
         authMethod: 'password',
@@ -328,21 +356,15 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       _openHome();
-
     } on TimeoutException {
-
       _showMessage(
         'Login timed out. Check your connection.',
       );
-
     } on FormatException {
-
       _showMessage(
         'Invalid authentication response from PHP.',
       );
-
     } catch (e) {
-
       debugPrint(
         'Regular login failed: ${e.runtimeType}',
       );
@@ -350,9 +372,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _showMessage(
         'Cannot complete login. Check the PHP server.',
       );
-
     } finally {
-
       if (mounted) {
         setState(() {
           _busy = false;
@@ -362,11 +382,40 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // ========================================
-  // GOOGLE SIGN-IN
+  // GOOGLE SIGN-IN - ANDROID
   // ========================================
 
   Future<void> _signInWithGoogle() async {
-    if (_busy) return;
+    if (kIsWeb || _busy) return;
+
+    try {
+      // Preserve Android's existing sign-in flow.
+      final GoogleSignInAccount? account =
+      await _googleSignIn.signIn();
+
+      if (account == null) return;
+
+      await _processGoogleAccount(account);
+    } catch (e) {
+      debugPrint(
+        'Android Google Sign-In failed: ${e.runtimeType}',
+      );
+
+      _showMessage(
+        'Google Sign-In failed. '
+            'Check your connection and try again.',
+      );
+    }
+  }
+
+  // ========================================
+  // GOOGLE SIGN-IN - ANDROID + WEB
+  // ========================================
+
+  Future<void> _processGoogleAccount(
+      GoogleSignInAccount account,
+      ) async {
+    if (!mounted || _busy) return;
 
     final endpoint = _httpsEndpoint(
       googleLoginUrl,
@@ -384,34 +433,30 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      // Android:
+      // Account comes from GoogleSignIn.signIn().
+      //
+      // Web:
+      // Account comes from the official Google
+      // Sign-In button and its account event.
 
-      // STEP 1: Choose Google account.
-      final googleAccount =
-      await _googleSignIn.signIn();
-
-      if (googleAccount == null) {
-        return;
-      }
-
-      // STEP 2: Get Google ID token.
       final authentication =
-      await googleAccount.authentication;
+      await account.authentication;
 
-      final idToken =
+      final String? idToken =
           authentication.idToken;
 
-      if (idToken == null ||
-          idToken.isEmpty) {
-
+      if (idToken == null || idToken.isEmpty) {
         _showMessage(
           'Google did not return an ID token. '
-              'Check Google Cloud OAuth configuration.',
+              'Check your Google OAuth configuration.',
         );
-
         return;
       }
 
-      // STEP 3: Verify with PHP backend.
+      // PHP verifies the Google ID token
+      // and returns the app's own session token.
+
       final response = await http.post(
         endpoint,
         headers: {
@@ -432,14 +477,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode != 200 ||
           !_isSuccess(decoded)) {
-
         _showMessage(
           _serverMessage(
             decoded,
             'Google Sign-In failed.',
           ),
         );
-
         return;
       }
 
@@ -449,7 +492,6 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
 
-      // STEP 4: Save Google PHP session.
       await _saveAuthenticatedSession(
         responseData: decoded,
         authMethod: 'google',
@@ -458,32 +500,23 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       _openHome();
-
     } on TimeoutException {
-
       _showMessage(
         'Google Login timed out.',
       );
-
     } on FormatException {
-
       _showMessage(
         'Invalid Google authentication response.',
       );
-
     } catch (e) {
-
       debugPrint(
-        'Google login failed: ${e.runtimeType}',
+        'Google authentication failed: ${e.runtimeType}',
       );
 
       _showMessage(
-        'Google Sign-In failed. '
-            'Check your connection and try again.',
+        'Google authentication could not be completed.',
       );
-
     } finally {
-
       if (mounted) {
         setState(() {
           _busy = false;
@@ -503,32 +536,25 @@ class _LoginScreenState extends State<LoginScreen> {
   }) {
     return InputDecoration(
       labelText: label,
-
       labelStyle: const TextStyle(
         color: muted,
       ),
-
       prefixIcon: Icon(
         icon,
         color: cyan,
       ),
-
       suffixIcon: suffix,
-
       filled: true,
       fillColor: bg,
-
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
       ),
-
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(
           color: border,
         ),
       ),
-
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(
@@ -536,14 +562,12 @@ class _LoginScreenState extends State<LoginScreen> {
           width: 1.5,
         ),
       ),
-
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(
           color: Colors.redAccent,
         ),
       ),
-
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
         borderSide: const BorderSide(
@@ -558,28 +582,37 @@ class _LoginScreenState extends State<LoginScreen> {
   // ========================================
 
   Widget _googleLoginButton() {
+    if (kIsWeb) {
+      // The web plugin provides Google's actual
+      // Sign-In button. A custom Flutter button
+      // cannot replace this authentication flow.
+
+      return Center(
+        child: SizedBox(
+          width: 280,
+          height: 52,
+          child: buildGoogleWebButton(),
+        ),
+      );
+    }
+
+    // Android button remains unchanged.
     return SizedBox(
       width: double.infinity,
       height: 53,
-
       child: OutlinedButton.icon(
         onPressed:
         _busy ? null : _signInWithGoogle,
-
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.white,
           backgroundColor: bg,
-
           side: const BorderSide(
             color: border,
           ),
-
           shape: RoundedRectangleBorder(
-            borderRadius:
-            BorderRadius.circular(13),
+            borderRadius: BorderRadius.circular(13),
           ),
         ),
-
         icon: const Text(
           'G',
           style: TextStyle(
@@ -588,7 +621,6 @@ class _LoginScreenState extends State<LoginScreen> {
             fontWeight: FontWeight.w900,
           ),
         ),
-
         label: const Text(
           'Continue with Google',
           style: TextStyle(
@@ -606,46 +638,33 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       backgroundColor: bg,
       resizeToAvoidBottomInset: true,
-
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(
               maxWidth: 480,
             ),
-
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(
                 20, 32, 20, 28,
               ),
-
               child: Column(
                 children: [
-
-                  // =================================
-                  // APP LOGO
-                  // =================================
-
+                  // APPLICATION LOGO
                   Container(
                     width: 78,
                     height: 78,
-
                     decoration: BoxDecoration(
-                      color:
-                      const Color(0xFF15364B),
-
+                      color: const Color(0xFF15364B),
                       borderRadius:
                       BorderRadius.circular(23),
-
                       border: Border.all(
                         color: cyan,
                       ),
                     ),
-
                     child: const Icon(
                       Icons.shield_outlined,
                       color: cyan,
@@ -669,40 +688,28 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const Text(
                     'Secure Monitoring Platform',
-                    style: TextStyle(
-                      color: muted,
-                    ),
+                    style: TextStyle(color: muted),
                   ),
 
                   const SizedBox(height: 29),
 
-                  // =================================
-                  // LOGIN FORM CARD
-                  // =================================
-
+                  // LOGIN CARD
                   Container(
                     padding: const EdgeInsets.all(22),
-
                     decoration: BoxDecoration(
                       color: surface,
-
                       borderRadius:
                       BorderRadius.circular(22),
-
                       border: Border.all(
                         color: border,
                       ),
                     ),
-
                     child: Form(
                       key: _formKey,
-
                       child: Column(
                         crossAxisAlignment:
                         CrossAxisAlignment.start,
-
                         children: [
-
                           const Text(
                             'Welcome Back',
                             style: TextStyle(
@@ -725,69 +732,47 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           const SizedBox(height: 23),
 
-                          // =========================
                           // USERNAME
-                          // =========================
-
                           TextFormField(
                             controller:
                             _usernameController,
-
                             enabled: !_busy,
-
                             textInputAction:
                             TextInputAction.next,
-
                             style: const TextStyle(
                               color: Colors.white,
                             ),
-
                             decoration: _inputDecoration(
                               label: 'Username',
-                              icon:
-                              Icons.person_outline,
+                              icon: Icons.person_outline,
                             ),
-
                             validator: (value) {
                               if (value == null ||
                                   value.trim().isEmpty) {
                                 return 'Enter your username';
                               }
-
                               return null;
                             },
                           ),
 
                           const SizedBox(height: 16),
 
-                          // =========================
                           // PASSWORD
-                          // =========================
-
                           TextFormField(
                             controller:
                             _passwordController,
-
                             enabled: !_busy,
-
                             obscureText: _hidePassword,
-
                             textInputAction:
                             TextInputAction.done,
-
                             onFieldSubmitted: (_) =>
                                 _login(),
-
                             style: const TextStyle(
                               color: Colors.white,
                             ),
-
                             decoration: _inputDecoration(
                               label: 'Password',
-
-                              icon:
-                              Icons.lock_outline,
-
+                              icon: Icons.lock_outline,
                               suffix: IconButton(
                                 onPressed: _busy
                                     ? null
@@ -797,7 +782,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                     !_hidePassword;
                                   });
                                 },
-
                                 icon: Icon(
                                   _hidePassword
                                       ? Icons.visibility_off
@@ -806,30 +790,23 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ),
-
                             validator: (value) {
                               if (value == null ||
                                   value.isEmpty) {
                                 return 'Enter your password';
                               }
-
                               return null;
                             },
                           ),
 
-                          // =========================
                           // FORGOT PASSWORD
-                          // =========================
-
                           Align(
                             alignment:
                             Alignment.centerRight,
-
                             child: TextButton(
                               onPressed: _busy
                                   ? null
                                   : _openForgotPassword,
-
                               child: const Text(
                                 'Forgot Password?',
                                 style: TextStyle(
@@ -841,40 +818,33 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           const SizedBox(height: 12),
 
-                          // =========================
-                          // SIGN IN BUTTON
-                          // =========================
-
+                          // REGULAR SIGN IN
                           SizedBox(
                             width: double.infinity,
                             height: 53,
-
                             child: ElevatedButton(
                               onPressed:
                               _busy ? null : _login,
-
-                              style: ElevatedButton.styleFrom(
+                              style:
+                              ElevatedButton.styleFrom(
                                 backgroundColor: cyan,
                                 foregroundColor: bg,
-
-                                shape: RoundedRectangleBorder(
+                                shape:
+                                RoundedRectangleBorder(
                                   borderRadius:
                                   BorderRadius.circular(13),
                                 ),
                               ),
-
                               child: _busy
                                   ? const SizedBox(
                                 width: 23,
                                 height: 23,
-
                                 child:
                                 CircularProgressIndicator(
                                   color: bg,
                                   strokeWidth: 2.5,
                                 ),
                               )
-
                                   : const Text(
                                 'Sign In',
                                 style: TextStyle(
@@ -888,14 +858,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           const SizedBox(height: 17),
 
-                          // =========================
-                          // REGISTRATION
-                          // =========================
-
+                          // REGISTER ACCOUNT
                           Row(
                             mainAxisAlignment:
                             MainAxisAlignment.center,
-
                             children: [
                               const Flexible(
                                 child: Text(
@@ -906,12 +872,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                               ),
-
                               TextButton(
                                 onPressed: _busy
                                     ? null
                                     : _openRegister,
-
                                 child: const Text(
                                   'Create Account',
                                   style: TextStyle(
@@ -926,10 +890,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           const SizedBox(height: 13),
 
-                          // =========================
-                          // DIVIDER
-                          // =========================
-
+                          // GOOGLE LOGIN DIVIDER
                           const Row(
                             children: [
                               Expanded(
@@ -937,13 +898,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                   color: border,
                                 ),
                               ),
-
                               Padding(
                                 padding:
                                 EdgeInsets.symmetric(
                                   horizontal: 11,
                                 ),
-
                                 child: Text(
                                   'OR CONTINUE WITH',
                                   style: TextStyle(
@@ -952,7 +911,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                               ),
-
                               Expanded(
                                 child: Divider(
                                   color: border,
@@ -963,14 +921,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                           const SizedBox(height: 18),
 
-                          // =========================
-                          // GOOGLE LOGIN ONLY
-                          // =========================
-
+                          // GOOGLE BUTTON
                           _googleLoginButton(),
-
-                          // Facebook removed.
-                          // Fingerprint removed.
                         ],
                       ),
                     ),
@@ -979,27 +931,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 19),
 
                   // =================================
-                  // DEMO MODE
+                  // CCTV DEMO MODE
                   // =================================
 
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(18),
-
                     decoration: BoxDecoration(
                       color: surface,
-
                       borderRadius:
                       BorderRadius.circular(19),
-
                       border: Border.all(
                         color: cyan,
                       ),
                     ),
-
                     child: Column(
                       children: [
-
                         const Icon(
                           Icons.play_circle_outline,
                           color: green,
@@ -1034,26 +981,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         SizedBox(
                           width: double.infinity,
-
                           child: OutlinedButton.icon(
                             onPressed:
                             _busy ? null : _openDemo,
-
                             icon: const Icon(
                               Icons.smart_display_outlined,
                             ),
-
                             label: const Text(
                               'Try Demo Without Login',
                             ),
-
-                            style: OutlinedButton.styleFrom(
+                            style:
+                            OutlinedButton.styleFrom(
                               foregroundColor: cyan,
-
                               side: const BorderSide(
                                 color: cyan,
                               ),
-
                               padding:
                               const EdgeInsets.all(15),
                             ),
