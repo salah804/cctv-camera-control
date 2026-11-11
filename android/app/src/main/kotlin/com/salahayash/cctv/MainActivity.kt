@@ -1,4 +1,4 @@
-package com.example.camera
+package com.salahayash.cctv
 
 import io.flutter.embedding.android.FlutterActivity
 
